@@ -158,6 +158,7 @@ defmodule Mix.Tasks.Phx.Swagger.Generate do
     swagger_fun = "swagger_path_#{action}" |> String.to_atom()
 
     loaded? = Code.ensure_compiled(controller)
+
     case loaded? do
       {:module, _} ->
         %{
@@ -166,6 +167,7 @@ defmodule Mix.Tasks.Phx.Swagger.Generate do
           path: format_path(path),
           verb: verb
         }
+
       _ ->
         Logger.warn("Warning: #{controller} module didn't load.")
         nil
@@ -209,6 +211,7 @@ defmodule Mix.Tasks.Phx.Swagger.Generate do
     url = Keyword.get(endpoint_config, :url)
     host = Keyword.get(url, :host, "localhost")
     port = Keyword.get(url, :port, 4000)
+    scheme = Keyword.get(url, :scheme, "http")
 
     swagger_map =
       if !load_from_system_env and is_binary(host) and (is_integer(port) or is_binary(port)) do
@@ -218,12 +221,16 @@ defmodule Mix.Tasks.Phx.Swagger.Generate do
         swagger_map
       end
 
-    case endpoint_config[:https] do
-      nil ->
-        swagger_map
+    if scheme == "https" do
+      Map.put_new(swagger_map, :schemes, ["https", "http"])
+    else
+      case endpoint_config[:https] do
+        nil ->
+          swagger_map
 
-      _ ->
-        Map.put_new(swagger_map, :schemes, ["https", "http"])
+        _ ->
+          Map.put_new(swagger_map, :schemes, ["https", "http"])
+      end
     end
   end
 
